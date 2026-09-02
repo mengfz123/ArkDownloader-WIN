@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ArkDownloader</title>
+  <link rel="icon" href="/static/img/icon.png" type="image/png" />
+  <link rel="stylesheet" href="/static/css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <img class="brand-icon" src="/static/img/icon.png" alt="ArkDownloader" width="36" height="36" />
+        <div class="brand-text">
+          <strong>ArkDownloader</strong>
+          <span>下载器</span>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="active">
+          <span class="nav-icon">▶</span> 正在下载
+          <span class="badge" id="badgeActive">0</span>
+        </button>
+        <button class="nav-item" data-view="done">
+          <span class="nav-icon">✓</span> 已完成
+          <span class="badge" id="badgeDone">0</span>
+        </button>
+        <button class="nav-item" data-view="error">
+          <span class="nav-icon">!</span> 失败
+          <span class="badge" id="badgeError">0</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <span class="nav-icon">⚙</span> 设置
+        </button>
+      </nav>
+      <div class="sidebar-foot">
+        <button type="button" class="nav-item contact-btn" id="btnContact">
+          <span class="nav-icon">💬</span> 联系我们
+        </button>
+        <small id="appVersion">v1.0.0</small>
+        <small class="hint-keys">Ctrl+N 新建</small>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section id="viewTasks" class="view">
+        <header class="toolbar">
+          <div class="toolbar-group">
+            <button class="btn primary" id="btnAdd" title="Ctrl+N">＋ 新建任务</button>
+            <button class="btn" id="btnPauseAll">暂停全部</button>
+            <button class="btn" id="btnResumeAll">继续全部</button>
+            <button class="btn" id="btnClearDone">清空已完成</button>
+          </div>
+          <div class="toolbar-spacer"></div>
+          <div class="toolbar-tools">
+            <input class="search" id="searchInput" type="search" placeholder="搜索文件名…" />
+            <select class="select" id="sortSelect" title="排序">
+              <option value="time-desc">最新优先</option>
+              <option value="time-asc">最早优先</option>
+              <option value="name-asc">名称 A→Z</option>
+              <option value="size-desc">体积大到小</option>
+              <option value="progress-desc">进度高到低</option>
+            </select>
+          </div>
+        </header>
+
+        <div class="status-bar" id="statusBar">
+          <span id="statRpc" class="rpc-status">
+            <span class="rpc-dot" id="rpcDot"></span>
+            <span id="rpcLabel">RPC</span>
+            <strong id="rpcAddr">—</strong>
+          </span>
+          <span id="statSpeed">总速度<strong>—</strong></span>
+          <span id="statRunning">进行中<strong>0</strong></span>
+          <span id="statPending">排队<strong>0</strong></span>
+        </div>
+
+        <div class="table-wrap" id="dropZone">
+          <table class="task-table">
+            <colgroup>
+              <col class="col-name" />
+              <col class="col-size" />
+              <col class="col-progress" />
+              <col class="col-eta" />
+              <col class="col-speed" />
+              <col class="col-status" />
+              <col class="col-actions" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col-name">文件名</th>
+                <th class="col-size">大小</th>
+                <th class="col-progress">进度</th>
+                <th class="col-eta">剩余时间</th>
+                <th class="col-speed">速度</th>
+                <th class="col-status">状态</th>
+                <th class="col-actions">操作</th>
+              </tr>
+            </thead>
+            <tbody id="taskBody"></tbody>
+          </table>
+          <div class="empty" id="emptyState">
+            <div class="empty-inner">
+              <p>暂无任务</p>
+              <p class="empty-sub">点击「新建任务」或按 <kbd>Ctrl+N</kbd>，也可拖拽链接到此处</p>
+            </div>
+          </div>
+          <div class="drop-overlay hidden" id="dropOverlay">松开鼠标以添加下载</div>
+        </div>
+      </section>
+
+      <section id="viewSettings" class="view hidden">
+        <header class="toolbar"><h2>设置</h2></header>
+        <div class="settings-wrap">
+        <form class="settings-form" id="settingsForm">
+          <fieldset class="settings-section settings-section--nums">
+            <legend>下载</legend>
+            <label>默认保存目录<input type="text" id="cfgDir" /></label>
+            <label>默认连接数<input type="number" id="cfgConn" min="1" max="32" /></label>
+            <label>分片大小（MB）
+              <input type="number" id="cfgChunkMb" min="1" max="5" step="1" />
+              <span class="label-tip">默认 1MB，最大 5MB；新建任务生效</span>
+            </label>
+            <label>最大同时下载<input type="number" id="cfgMaxRun" min="1" max="10" /></label>
+            <label class="checkbox"><input type="checkbox" id="cfgAutoStart" /> 添加后自动开始</label>
+            <label class="checkbox"><input type="checkbox" id="cfgNotify" /> 下载完成时通知</label>
+          </fieldset>
+          <fieldset class="settings-section">
+            <legend>User-Agent</legend>
+            <label>百度直链 User-Agent
+              <textarea id="cfgUserAgent" rows="2" spellcheck="false"></textarea>
+            </label>
+            <label>普通 HTTP User-Agent
+              <input type="text" id="cfgHttpUserAgent" spellcheck="false" />
+            </label>
+          </fieldset>
+          <fieldset class="settings-section settings-section--full">
+            <legend>RPC 远程服务</legend>
+            <label class="checkbox"><input type="checkbox" id="cfgRpcRemote" /> 允许局域网 / 远程访问（绑定 0.0.0.0）</label>
+            <label>RPC 端口<input type="number" id="cfgRpcPort" min="0" max="65535" /></label>
+            <label>RPC 访问令牌（可选）<input type="text" id="cfgRpcToken" placeholder="留空表示不校验" autocomplete="off" /></label>
+            <div class="settings-inline-actions">
+              <button type="button" class="btn" id="btnRpcHelp">查看调用说明</button>
+            </div>
+          </fieldset>
+          <div class="settings-actions">
+            <button type="submit" class="btn primary">保存设置</button>
+          </div>
+        </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 新建任务 -->
+  <div class="modal hidden" id="addModal">
+    <div class="modal-card">
+      <header class="modal-head">
+        <h3>新建下载任务</h3>
+        <button class="icon-btn" id="btnCloseModal" title="Esc">×</button>
+      </header>
+      <div class="modal-body">
+        <label>下载链接 <span class="label-tip">支持多行，每行一个链接</span>
+          <textarea id="addUrl" rows="5" placeholder="粘贴 HTTP / 百度直链，可多行批量添加…"></textarea>
+        </label>
+        <div class="row2">
+          <label>文件名 <span class="label-tip">批量时自动识别</span>
+            <input type="text" id="addName" placeholder="单任务可指定，留空自动识别" />
+          </label>
+          <label>连接数<input type="number" id="addConn" min="1" max="32" value="8" /></label>
+        </div>
+        <label>保存目录<input type="text" id="addDir" /></label>
+        <div class="resolve-info hidden" id="resolveInfo"></div>
+      </div>
+      <footer class="modal-foot">
+        <button class="btn" id="btnResolve">检测链接</button>
+        <button class="btn primary" id="btnSubmitAdd">开始下载</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- 删除确认 -->
+  <div class="modal hidden" id="delModal">
+    <div class="modal-card modal-sm">
+      <header class="modal-head"><h3>删除任务</h3></header>
+      <div class="modal-body">
+        <p id="delText">确定删除此任务？</p>
+        <label class="checkbox"><input type="checkbox" id="delFile" /> 同时删除已下载的文件</label>
+      </div>
+      <footer class="modal-foot">
+        <button class="btn" id="btnDelCancel">取消</button>
+        <button class="btn danger fill" id="btnDelOk">删除</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- RPC 调用说明 -->
+  <div class="modal hidden" id="rpcHelpModal">
+    <div class="modal-card modal-lg">
+      <header class="modal-head">
+        <h3>RPC 调用说明</h3>
+        <button type="button" class="icon-btn" id="btnCloseRpcHelp" title="Esc">×</button>
+      </header>
+      <div class="modal-body rpc-help-body">
+        <div class="rpc-help-status" id="rpcHelpStatusBox">
+          <span class="rpc-dot" id="rpcHelpDot"></span>
+          <div class="rpc-help-status-main">
+            <div class="rpc-help-status-title" id="rpcHelpStatusText">检测中…</div>
+            <div class="rpc-help-url-list">
+              <div class="rpc-help-url-row">
+                <span class="rpc-help-url-label">本机</span>
+                <code class="rpc-help-url" id="rpcHelpLocal">—</code>
+                <button type="button" class="btn sm rpc-copy-btn" data-copy-target="rpcHelpLocal">复制</button>
+              </div>
+              <div class="rpc-help-url-row hidden" id="rpcHelpLanRow">
+                <span class="rpc-help-url-label">局域网</span>
+                <code class="rpc-help-url" id="rpcHelpLan">—</code>
+                <button type="button" class="btn sm rpc-copy-btn" data-copy-target="rpcHelpLan">复制</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rpc-help-section" id="rpcHelpAuthSection">
+          <div class="rpc-help-section-head">
+            <h4>远程认证</h4>
+            <span class="rpc-help-tag" id="rpcHelpTokenTag">未启用令牌</span>
+          </div>
+          <p class="rpc-help-desc">本机 UI 访问无需令牌。远程调用若已设置令牌，请求头需携带以下任一方式：</p>
+          <pre class="code-block-pre" id="rpcHelpAuth">Authorization: Bearer &lt;你的令牌&gt;
+X-ArkDownloader-Token: &lt;你的令牌&gt;</pre>
+        </div>
+
+        <div class="rpc-help-section">
+          <div class="rpc-help-section-head"><h4>常用接口</h4></div>
+
+          <div class="code-block">
+            <div class="code-block-head">
+              <span class="http-method post">POST</span>
+              <span class="code-block-path">/api/v1/tasks</span>
+              <span class="code-block-name">添加下载任务</span>
+              <button type="button" class="btn sm rpc-copy-btn" data-copy-target="rpcHelpAdd">复制</button>
+            </div>
+            <pre class="code-block-pre" id="rpcHelpAdd"></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block-head">
+              <span class="http-method post">POST</span>
+              <span class="code-block-path">/api/v1/tasks/batch</span>
+              <span class="code-block-name">批量添加</span>
+              <button type="button" class="btn sm rpc-copy-btn" data-copy-target="rpcHelpBatch">复制</button>
+            </div>
+            <pre class="code-block-pre" id="rpcHelpBatch"></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block-head">
+              <span class="http-method get">GET</span>
+              <span class="code-block-path">/api/v1/tasks</span>
+              <span class="code-block-name">查询任务列表</span>
+              <button type="button" class="btn sm rpc-copy-btn" data-copy-target="rpcHelpList">复制</button>
+            </div>
+            <pre class="code-block-pre" id="rpcHelpList"></pre>
+          </div>
+        </div>
+
+        <div class="rpc-help-note">
+          <strong>提示</strong>
+          <ul>
+            <li>修改端口后需<strong>重启应用</strong>；切换「远程访问」保存后立即生效</li>
+            <li>Reqable 等抓包脚本可向上述地址 POST 推送直链</li>
+            <li>响应格式为 JSON：<code>{"code":0,"msg":"","data":...}</code></li>
+          </ul>
+        </div>
+      </div>
+      <footer class="modal-foot rpc-help-foot">
+        <button type="button" class="btn" id="btnCopyRpcBase">复制本机地址</button>
+        <button type="button" class="btn primary" id="btnRpcHelpOk">关闭</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="contactModal">
+    <div class="modal-card modal-sm contact-modal">
+      <header class="modal-head">
+        <h3>联系我们</h3>
+        <button type="button" class="icon-btn" id="btnCloseContact" aria-label="关闭">×</button>
+      </header>
+      <div class="modal-body contact-body">
+        <p class="contact-desc">欢迎加入 QQ 交流群，反馈问题与获取更新：</p>
+        <div class="contact-qr-wrap">
+          <img src="/static/img/qq-group.png" alt="QQ 群二维码" class="contact-qr" width="220" height="220" />
+        </div>
+        <p class="contact-pwd">加群密码：<code id="contactPwd">arkDownloader</code>
+          <button type="button" class="btn sm" id="btnCopyContactPwd">复制</button>
+        </p>
+      </div>
+      <footer class="modal-foot">
+        <button type="button" class="btn primary" id="btnContactOk">关闭</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
