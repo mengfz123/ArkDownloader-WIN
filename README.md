@@ -1,14 +1,12 @@
 # ArkDownloader
 
-面向 Windows 的轻量多线程下载器，专为 **百度网盘直链** 与通用 HTTP 下载设计。界面风格接近 Motrix，体积小、无 Electron / aria2 依赖，并提供与 Gopeed 风格兼容的本地 RPC，便于脚本与网盘工具联动。
-
-> 原项目名 **PanFetch**；配置目录已迁移为 `%APPDATA%\ArkDownloader\`（仍兼容旧版 `%APPDATA%\PanFetch\`）。
+面向 Windows 的轻量多线程下载器，专为 **百度网盘直链** 与通用 HTTP 下载设计。体积小、无 Electron / aria2 依赖，并提供本地 RPC，便于脚本与网盘工具联动。
 
 **当前版本：** 1.0.6
 
 ---
 
-## 为什么选 ArkDownloader
+## 特点
 
 | 特色 | 说明 |
 |------|------|
