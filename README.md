@@ -1,10 +1,22 @@
 # ArkDownloader
 
-面向 Windows 的轻量多线程下载器，专为 **百度网盘直链** 与通用 HTTP 下载设计。体积小、无 Electron / aria2 依赖，并提供本地 RPC，便于脚本与网盘工具联动。
+面向 Windows 的轻量多线程下载器。体积小、无 Electron / aria2 依赖，并提供本地 RPC，便于脚本与网盘工具联动。
+<img width="1920" height="1001" alt="image" src="https://github.com/user-attachments/assets/6b2ec11f-658a-4fe7-a231-d5c5fc8bc965" />
+
+
 
 **当前版本：** 1.0.6
 
 ---
+
+## 网盘不限速下载
+
+配合 网盘解析站：http://120.76.139.101:5173/dashboard , https://clouds.arkdream.top 可以实现免登录实现百度网盘，夸克网盘不限速下载
+<img width="1504" height="847" alt="image" src="https://github.com/user-attachments/assets/04d8ba4d-3fb4-4229-971d-8c50b3489d69" />
+<img width="1454" height="848" alt="image" src="https://github.com/user-attachments/assets/feee165f-08c5-45cc-ac9f-97e3f8e5f2b1" />
+
+<img width="1920" height="1001" alt="image" src="https://github.com/user-attachments/assets/4b75b461-b853-4634-8835-ade245b13ed0" />
+
 
 ## 特点
 
@@ -94,11 +106,6 @@ Authorization: Bearer <token>
 
 ---
 
-## 百度直链说明
-
-本工具下载的是 **已拿到的直链**（含 `size=` 等参数的 PCS/CDN URL），不会登录网盘账号、也不会破解分享页。请自行通过官方客户端、第三方网盘工具等获取合法直链后导入。
-
----
 
 ## 相关项目
 
